@@ -4,7 +4,7 @@ import time
 import math
 
 #Need torun on simulation
-import dronekit_sitl
+#import dronekit_sitl
 
 
 class CDroneKitFly:
@@ -13,15 +13,22 @@ class CDroneKitFly:
         # Thrust >  0.5: Ascend
         # Thrust == 0.5: Hold the altitude
         # Thrust <  0.5: Descend
-        self.DEFAULT_TAKEOFF_THRUST = 0.7
-        self.SMOOTH_TAKEOFF_THRUST = 0.6
+        self.DEFAULT_TAKEOFF_THRUST = 0.52
+        self.SMOOTH_TAKEOFF_THRUST = 0.52
         #check for simulation
-        self.simulation = True
-        self.sitl = ""
+        self.simulation = False
+        self.sitl = None
         #store connection string
         self.connection_string = ""
         #keep vehicle object
         self.Vehicle = ''
+        self.current_altitude = ''
+        self.last_altitude_cache = None
+	self.target_altitude = 3
+	self.base_roll = 3.01   #best roll n pitc combination roll = 3.11 pitch =-2.8
+	#self.base_roll = -2.11
+	#self.base_pitch = 1.18
+	self.base_pitch = -2.71
 
 
 
@@ -41,14 +48,17 @@ class CDroneKitFly:
     def ConnectingVehicle(self):
         #need to check if wait_ready should be true or False, Experiment with both before deciding keep True for now
         self.Vehicle = connect(self.connection_string, wait_ready=True)
+        #self.Vehicle.set_mavlink_callback(self.mavrx_debug_handler)
+        self.Vehicle.add_attribute_listener('attitude', self.Attitude_Callback)
 
     #Arm Vehicle
     def ArmingVehicle(self,mode = "GUIDED"):
         print("Pre Arm Checking, FIle : CDroneKitFly , Method : ArmingVehicle")
-        while not self.Vehicle.is_armable:
-            print(" Waiting for vehicle to initialise...")
-            time.sleep(1)
+        #while not self.Vehicle.is_armable:
+            #print(" Waiting for vehicle to initialise...")
+            #time.sleep(1)
         print("Arming Motor ,FIle : CDroneKitFly , Method : ArmingVehicle ")
+	print(mode)
         #GUIDED_NOGPS, AUTO, GUIDED
         self.Vehicle.mode = VehicleMode(mode)
         self.Vehicle.armed = True
@@ -59,13 +69,18 @@ class CDroneKitFly:
 
         print(" Vehicle Armed , FIle : CDroneKitFly , Method : ArmingVehicle ")
 
-    def TakeoffVehicle(self):
+    def TakeoffVehicle(self,dura=3):
         print("Taking OFF, FIle : CDroneKitFly , Method : TakeoffVehicle ")
         thrust = self.DEFAULT_TAKEOFF_THRUST
-        self.FlyDrone(thrust = thrust)
+	#self.current_altitude = self.Vehicle.global_relative_frame.alt;
+	#print(self.current_altitude)
+        self.FlyDrone(thrust = thrust,duration=dura)
+	#self.current_altitude = self.Vehicle.global_relative_frame.alt;
+	#print(self.current_altitude)
 
     #fly drone
-    def FlyDrone(self,roll_angle = 0.0, pitch_angle = 0.0, yaw_rate = 0.0, thrust = 0.5, duration = 0):
+    #according to Qgroung Controller Roll = -2.0, pitch = 1
+    def FlyDrone(self,roll_angle1 = 0, pitch_angle1 = 0, yaw_rate = 0.0, thrust = 0.505, duration = 0):
         """
             Note that from AC3.3 the message should be re-sent every second (after about 3 seconds
             with no message the velocity will drop back to zero). In AC3.2.1 and earlier the specified
@@ -77,6 +92,8 @@ class CDroneKitFly:
         The roll and pitch rate cannot be controllbed with rate in radian in AC3.4.4 or earlier,
         so you must use quaternion to control the pitch and roll for those vehicles.
         """
+	roll_angle = self.base_roll + roll_angle1
+	pitch_angle = self.base_pitch + pitch_angle1
 
         msg = self.Vehicle.message_factory.set_attitude_target_encode(0,
                                                                       0,
@@ -95,7 +112,8 @@ class CDroneKitFly:
                                                                         # Body yaw rate in radian
                                                                       thrust)
                                                                         # Thrust
-        self.Vehicle.send_mavlink(msg)
+        result = self.Vehicle.send_mavlink(msg)
+	print("Mv link msg resulti ",result)
 
         if duration != 0:
             # Divide the duration into the frational and integer parts
@@ -107,6 +125,7 @@ class CDroneKitFly:
             # Send command to vehicle on 1 Hz cycle
             for x in range(0, int(modf[1])):
                 time.sleep(1)
+		print("sending msg %d",x)
                 self.Vehicle.send_mavlink(msg)
 
 
@@ -125,8 +144,18 @@ class CDroneKitFly:
         x = t0 * t3 * t4 - t1 * t2 * t5
         y = t0 * t2 * t5 + t1 * t3 * t4
         z = t1 * t2 * t4 - t0 * t3 * t5
+	print("W valuw %d",w)
+	print("x valuw %d",x)
+	print("y valuw %d",y)
+	print("z valuw %d",z)
 
         return [w, x, y, z]
+
+    def vehicleSimpleTafeoff(self,t_altitude=3):
+	self.target_altitude = t_altitude
+	print("Taking off to target altitude< ",self.target_altitude)
+	self.Vehicle.simple_takeoff(self.target_altitude)
+	
 
     def send_ned_velocity(self,velocity_x, velocity_y, velocity_z, duration):
         """
@@ -162,10 +191,36 @@ class CDroneKitFly:
 
     def CloseVehicle(self):
         print("Close Drone Object, File CDroneKitFly , Method : CloseVehicle")
+	self.FlyDrone()
         self.Vehicle.close()
         if self.sitl is not None:
             self.sitl.stop()
 
         print("Drone Closed, File CDroneKitFly , Method : CloseVehicle")
+
+    def Attitude_Callback(self, Vehicle,attribute_name,value):
+        if value != self.last_altitude_cache:
+            #print(" CALLBACK: Attitude changed to", value)
+            #print(" CALLBACK: Attitude changed to", attribute_name)
+            self.last_altitude_cache = value
+
+    def mavrx_debug_handler(self,message):
+        print ("Received %s",message)
+
+	'''	
+	def attitude_callback(self.VehicleMode):
+    # `attr_name` - the observed attribute (used if callback is used for multiple attributes)
+    # `self` - the associated vehicle object (used if a callback is different for multiple vehicles)
+    # `value` is the updated attribute value.
+    #last_attitude_cache
+    # Only publish when value changes
+	print('attitude')
+    if value!=self.last_attitude_cache:
+        print(" CALLBACK: Attitude changed to", value)
+        self.last_attitude_cache=value
+        
+    '''
+		
+
 
 

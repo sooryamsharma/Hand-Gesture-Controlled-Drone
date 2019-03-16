@@ -13,8 +13,8 @@ class CDroneKitFly:
         # Thrust >  0.5: Ascend
         # Thrust == 0.5: Hold the altitude
         # Thrust <  0.5: Descend
-        self.DEFAULT_TAKEOFF_THRUST = 0.52
-        self.SMOOTH_TAKEOFF_THRUST = 0.52
+        self.DEFAULT_TAKEOFF_THRUST = 0.6
+        self.SMOOTH_TAKEOFF_THRUST = 0.6
         #check for simulation
         self.simulation = False
         self.sitl = None
@@ -24,11 +24,11 @@ class CDroneKitFly:
         self.Vehicle = ''
         self.current_altitude = ''
         self.last_altitude_cache = None
-	self.target_altitude = 3
-	self.base_roll = 3.01   #best roll n pitc combination roll = 3.11 pitch =-2.8
-	#self.base_roll = -2.11
-	#self.base_pitch = 1.18
-	self.base_pitch = -2.71
+        self.target_altitude = 3
+        self.base_roll = 3.01   #best roll n pitc combination roll = 3.11 pitch =-2.8
+        #self.base_roll = -2.11
+        #self.base_pitch = 1.18
+        self.base_pitch = -2.71
 
 
 
@@ -58,7 +58,7 @@ class CDroneKitFly:
             #print(" Waiting for vehicle to initialise...")
             #time.sleep(1)
         print("Arming Motor ,FIle : CDroneKitFly , Method : ArmingVehicle ")
-	print(mode)
+        print(mode)
         #GUIDED_NOGPS, AUTO, GUIDED
         self.Vehicle.mode = VehicleMode(mode)
         self.Vehicle.armed = True
@@ -72,10 +72,10 @@ class CDroneKitFly:
     def TakeoffVehicle(self,dura=3):
         print("Taking OFF, FIle : CDroneKitFly , Method : TakeoffVehicle ")
         thrust = self.DEFAULT_TAKEOFF_THRUST
-	#self.current_altitude = self.Vehicle.global_relative_frame.alt;
+    #self.current_altitude = self.Vehicle.global_relative_frame.alt;
 	#print(self.current_altitude)
         self.FlyDrone(thrust = thrust,duration=dura)
-	#self.current_altitude = self.Vehicle.global_relative_frame.alt;
+    #self.current_altitude = self.Vehicle.global_relative_frame.alt;
 	#print(self.current_altitude)
 
     #fly drone
@@ -92,8 +92,8 @@ class CDroneKitFly:
         The roll and pitch rate cannot be controllbed with rate in radian in AC3.4.4 or earlier,
         so you must use quaternion to control the pitch and roll for those vehicles.
         """
-	roll_angle = self.base_roll + roll_angle1
-	pitch_angle = self.base_pitch + pitch_angle1
+        roll_angle = self.base_roll + roll_angle1
+        pitch_angle = self.base_pitch + pitch_angle1
 
         msg = self.Vehicle.message_factory.set_attitude_target_encode(0,
                                                                       0,
@@ -113,7 +113,7 @@ class CDroneKitFly:
                                                                       thrust)
                                                                         # Thrust
         result = self.Vehicle.send_mavlink(msg)
-	print("Mv link msg resulti ",result)
+        print("Mv link msg resulti ",result)
 
         if duration != 0:
             # Divide the duration into the frational and integer parts
@@ -125,7 +125,7 @@ class CDroneKitFly:
             # Send command to vehicle on 1 Hz cycle
             for x in range(0, int(modf[1])):
                 time.sleep(1)
-		print("sending msg %d",x)
+                print("sending msg %d",x)
                 self.Vehicle.send_mavlink(msg)
 
 
@@ -144,17 +144,18 @@ class CDroneKitFly:
         x = t0 * t3 * t4 - t1 * t2 * t5
         y = t0 * t2 * t5 + t1 * t3 * t4
         z = t1 * t2 * t4 - t0 * t3 * t5
-	print("W valuw %d",w)
-	print("x valuw %d",x)
-	print("y valuw %d",y)
-	print("z valuw %d",z)
-
+        print("W valuw %d",w)
+        print("x valuw %d",x)
+        print("y valuw %d",y)
+        print("z valuw %d",z)
+	#default X value in missin planner = -0.0271462
+	#default Y value in mission planner = 0.02586136
         return [w, x, y, z]
 
     def vehicleSimpleTafeoff(self,t_altitude=3):
-	self.target_altitude = t_altitude
-	print("Taking off to target altitude< ",self.target_altitude)
-	self.Vehicle.simple_takeoff(self.target_altitude)
+        self.target_altitude = t_altitude
+        print("Taking off to target altitude< ",self.target_altitude)
+        self.Vehicle.simple_takeoff(self.target_altitude)
 	
 
     def send_ned_velocity(self,velocity_x, velocity_y, velocity_z, duration):
@@ -191,12 +192,26 @@ class CDroneKitFly:
 
     def CloseVehicle(self):
         print("Close Drone Object, File CDroneKitFly , Method : CloseVehicle")
-	self.FlyDrone()
+        self.FlyDrone()
         self.Vehicle.close()
         if self.sitl is not None:
             self.sitl.stop()
 
         print("Drone Closed, File CDroneKitFly , Method : CloseVehicle")
+
+    def ChangeMode(self,mode = "LOITER",duration=3):
+        self.Vehicle.mode = VehicleMode(mode)
+        if duration != 0:
+            # Divide the duration into the frational and integer parts
+            modf = math.modf(duration)
+
+            # Sleep for the fractional part
+            time.sleep(modf[0])
+
+            # Send command to vehicle on 1 Hz cycle
+            for x in range(0, int(modf[1])):
+                time.sleep(1)
+		print("Mode maintain for ",x)
 
     def Attitude_Callback(self, Vehicle,attribute_name,value):
         if value != self.last_altitude_cache:
@@ -207,7 +222,7 @@ class CDroneKitFly:
     def mavrx_debug_handler(self,message):
         print ("Received %s",message)
 
-	'''	
+    '''	
 	def attitude_callback(self.VehicleMode):
     # `attr_name` - the observed attribute (used if callback is used for multiple attributes)
     # `self` - the associated vehicle object (used if a callback is different for multiple vehicles)

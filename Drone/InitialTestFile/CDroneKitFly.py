@@ -25,10 +25,10 @@ class CDroneKitFly:
         self.current_altitude = ''
         self.last_altitude_cache = None
         self.target_altitude = 3
-        self.base_roll = 3.01   #best roll n pitc combination roll = 3.11 pitch =-2.8
+        self.base_roll = 3.11   #best roll n pitc combination roll = 3.11 pitch =-2.8
         #self.base_roll = -2.11
         #self.base_pitch = 1.18
-        self.base_pitch = -2.71
+        self.base_pitch = -2.8
 
 
 

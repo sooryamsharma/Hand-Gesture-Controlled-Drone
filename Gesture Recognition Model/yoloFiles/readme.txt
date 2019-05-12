@@ -1,0 +1,1 @@
+These files must be placed in their respective folders of your builded darknet project. Read yolo documentation by https://github.com/AlexeyAB/darknet#requirements.

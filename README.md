@@ -25,6 +25,7 @@ We have divided our project into four modules:
 * We created a labelled dataset of 3000 images, 1500 each for one gesture.
 
 ### 3. Flight simulation
+![Output sample](https://media.giphy.com/media/ek5IyvkFiO45L2a2r5/giphy.gif)
 * To test the gesture recognition, we used the software V-REP to simulate a drone.
 * The simulation was controlled using RemoteApi offered by the V-REP software through a python script.
 * The python script contains method to move the drone to either left or right.
@@ -34,8 +35,6 @@ We have divided our project into four modules:
 * Since the drone crashed during one of the flights, we were unable to test the gesture control on the drone.
 * Our future goal will be to calibrate a swarm of drones to respond to gestures.
 * Some of the application of this project would be in real world situations that require hands free drone control.
-
-#### This repository mainly concerns with the second and third module.
 
 ## References
 * Intel Aero Wiki: [github.com/intel-aero/meta-intel-aero/wiki](https://github.com/intel-aero/meta-intel-aero/wiki)

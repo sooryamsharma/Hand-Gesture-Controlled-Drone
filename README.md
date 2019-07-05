@@ -25,7 +25,7 @@ We have divided our project into four modules:
 * We created a labelled dataset of 3000 images, 1500 each for one gesture.
 
 ### 3. Flight simulation
-![Output sample](https://media.giphy.com/media/ek5IyvkFiO45L2a2r5/giphy.gif)
+![Output sample](https://github.com/sooryamsharma/hand-gesture-controlled-drone/blob/master/misc/simulation.gif)
 * To test the gesture recognition, we used the software V-REP to simulate a drone.
 * The simulation was controlled using RemoteApi offered by the V-REP software through a python script.
 * The python script contains method to move the drone to either left or right.
